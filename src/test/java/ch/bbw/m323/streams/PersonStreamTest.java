@@ -1,6 +1,8 @@
 package ch.bbw.m323.streams;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ch.bbw.m323.streams.PersonStreamTest.Person.Country;
 import ch.bbw.m323.streams.PersonStreamTest.Person.Gender;
@@ -53,4 +55,78 @@ class PersonStreamTest implements WithAssertions {
 	// end::sample[]
 
 	// TODO: add all your own Testcases here
+
+	@Test
+	void namesWithMax4Letters() {
+		assertThat(people.stream()
+				.map(Person::name)
+				.filter(n -> n.length() <= 4)
+				.toList()
+		).containsOnly("Luca", "May", "Jojo");
+	}
+
+	@Test
+	void sumOfAllAges() {
+		assertThat(people.stream()
+				.mapToInt(Person::age)
+				.sum()
+		).isEqualTo(226);
+	}
+
+	@Test
+	void ageOfOldestPerson() {
+		assertThat(people.stream()
+				.mapToInt(Person::age)
+				.max()
+				.orElseThrow()
+		).isEqualTo(67);
+	}
+
+	@Test
+	void allCanadianMen() {
+		assertThat(people.stream()
+				.filter(p -> p.gender() == Gender.MALE)
+				.filter(p -> p.country().equals(canada))
+				.toList()
+		).hasSize(2).allSatisfy(p -> assertThat(p).isInstanceOf(Person.class));
+	}
+
+	@Test
+	void allNamesJoinedWithUnderline() {
+		assertThat(people.stream()
+				.map(Person::name)
+				.collect(Collectors.joining("_"))
+		).hasSize(51).contains("_");
+	}
+
+	@Test
+	void womenFromSmallCountriesUpToOneMillion() {
+		assertThat(people.stream()
+				.filter(p -> p.gender() == Gender.FEMALE)
+				.filter(p -> p.country().population() <= 1_000_000L)
+				.toList()
+		).isEmpty();
+	}
+
+	@Test
+	void maleNamesSortedByAge() {
+		assertThat(people.stream()
+				.filter(p -> p.gender() == Gender.MALE)
+				.sorted(Comparator.comparingInt(Person::age))
+				.map(Person::name)
+				.toList()
+		).containsExactly("Maurice", "Luca", "Laurence", "Brent");
+	}
+
+	@Test
+	void secondOldestWoman() {
+		assertThat(people.stream()
+				.filter(p -> p.gender() == Gender.FEMALE)
+				.sorted(Comparator.comparingInt(Person::age).reversed())
+				.limit(2)
+				.skip(1)
+				.findFirst()
+				.orElseThrow()
+		).extracting(Person::name).isEqualTo("Alice");
+	}
 }
